@@ -3,22 +3,23 @@ from qiskit_ibm_runtime import QiskitRuntimeService, RuntimeJob
 from qiskit.visualization import plot_histogram
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, execute
 # %%
-QiskitRuntimeService.save_account(channel="ibm_quantum", token="586969ff64ddf7153b493eb33b685f080c73de8d387bafe20388450e9cfa6f851a6d835b4db376bff7f619db8d85acbeac283bc79591e504ee9d1d13ee9cb112", set_as_default=True)
+
+QiskitRuntimeService.save_account(channel="ibm_quantum", token="", set_as_default=True)
+
 # %%
-num_qubits = 1
+num_qubits = 6
 service = QiskitRuntimeService()
 qr = QuantumRegister(num_qubits)
 cr = ClassicalRegister(num_qubits)
 circuit = QuantumCircuit(qr, cr)
 # %%
-print("Guess the Password")
+simulator = service.get_backend("ibm_kyoto")
+print("Guess the Number Game")
 print("------------------")
-print("The password has 8 digits, each either 0-9.")
-print("You have 3 attempts to guess it.")
-print("Bolded digits indicate correct guesses in the right position.")
+print("You have 5 attempts to guess it. Press 1 to continue.")
 
 attempts = 0
-max_attempts = 3
+max_attempts = 5
 
 win = False
 iuser = input("Press 1 to continue.")
@@ -29,46 +30,34 @@ if iuser == "1":
     
     while (attempts < max_attempts):
         print("Attempt", attempts+1)
-        guess = input("Enter your guess: ")
+        guess = int(input("Enter your guess: "))
+        print("Your guess is:", guess)
         if guess == password:
             print("Congratulations! You guessed the password!")
             win = True
             break
         else:
-            print("Incorrect. Here are the bolded digits:")
-            for i in range(len(password)):
-                if guess[i] == password[i]:
-                    print(password[i], end="")
-                else:
-                    print(guess[i], end="")
-            print()
+            if guess > password:
+                print("The password is smaller than your guess.")
+            else:
+                print("The password is greater than your guess.")
             attempts += 1
-
-    if input("Do you want to see the password? (y/n) ") == "y" and not win:
+    
+    if not win and input("Do you want to see the password? (y/n) ") == "y":
         print("The password is:", password)
 
 # %%
 def generate_password():
-    simulator = service.get_backend("ibmq_qasm_simulator")
-
-    # for i in range(num_qubits):
-    #     circuit.h(i)
-    #     circuit.measure(qr[i], cr[i])
-    #     if i < num_qubits-1:
-    #         circuit.cx(i, i+1)
-    circuit.h(0)
-    password = ""    
-    circuit.measure(qr[0], cr[0])
+    for i in range(num_qubits):
+        circuit.h(i)
+        circuit.measure(qr[i], cr[i])
     
-    results = execute(circuit, backend=simulator).result()
-    print(results)
-    for i in range(8):
-        print(next(iter(results)))
-    
-    # bitstring = next(iter(result.get_counts(circuit)))
-    # password = int(bitstring, 2)
+    result = execute(circuit, backend=simulator).result()
 
-    print(password)
+    bitstring = next(iter(result.get_counts(circuit)))
+    password = int(bitstring, 2)
+    print("Password:", password)
+    return password
 # %%
 generate_password()
 # %%
