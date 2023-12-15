@@ -1,1 +1,5 @@
 *.env
+Lib
+share
+Scripts
+etc
